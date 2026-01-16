@@ -139,10 +139,22 @@ export default function SharedGalleryPage() {
                       alt="YouTube thumbnail"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                       <div className="p-2 bg-white rounded-full">
                         <ExternalLink className="h-5 w-5" />
                       </div>
+                      {video.tags.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-1 px-2">
+                          {video.tags.map((tag, index) => (
+                            <span
+                              key={`${video.id}-tag-${index}`}
+                              className="rounded bg-white/90 px-2 py-0.5 text-xs text-gray-900"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </a>

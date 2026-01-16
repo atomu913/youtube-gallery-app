@@ -223,21 +223,35 @@ export default function HomePage() {
                     alt="YouTube thumbnail"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                    <a
-                      href={video.youtubeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 bg-white rounded-full hover:bg-gray-100"
-                    >
-                      <ExternalLink className="h-5 w-5" />
-                    </a>
-                    <button
-                      onClick={() => handleDeleteVideo(video.id)}
-                      className="p-2 bg-white rounded-full hover:bg-gray-100 text-red-600"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                    <div className="flex items-center justify-center gap-2">
+                      <a
+                        href={video.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-white rounded-full hover:bg-gray-100"
+                      >
+                        <ExternalLink className="h-5 w-5" />
+                      </a>
+                      <button
+                        onClick={() => handleDeleteVideo(video.id)}
+                        className="p-2 bg-white rounded-full hover:bg-gray-100 text-red-600"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
+                    {video.tags.length > 0 && (
+                      <div className="flex flex-wrap justify-center gap-1 px-2">
+                        {video.tags.map((tag, index) => (
+                          <span
+                            key={`${video.id}-tag-${index}`}
+                            className="rounded bg-white/90 px-2 py-0.5 text-xs text-gray-900"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>
