@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Video } from '@/types';
 import { extractYoutubeVideoId, getYoutubeThumbnailUrl } from '@/lib/youtube';
@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Share2, LogOut, ExternalLink, Trash2, Search } from 'lucide-react';
+import { Plus, Share2, LogOut, ExternalLink, Trash2, Search, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
@@ -20,9 +20,13 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [newVideoTags, setNewVideoTags] = useState('');
+  const [editVideoTags, setEditVideoTags] = useState('');
   const [error, setError] = useState('');
+  const [editError, setEditError] = useState('');
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -40,7 +44,12 @@ export default function HomePage() {
     .split(',')
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
+  const selectedEditTags = editVideoTags
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
   const currentTagFragment = newVideoTags.split(',').pop()?.trim().toLowerCase() ?? '';
+  const currentEditTagFragment = editVideoTags.split(',').pop()?.trim().toLowerCase() ?? '';
   const filteredTagSuggestions =
     currentTagFragment.length === 0
       ? tagSuggestions.filter((tag) => !selectedTags.includes(tag)).slice(0, 5)
@@ -48,6 +57,14 @@ export default function HomePage() {
           (tag) =>
             !selectedTags.includes(tag) &&
             tag.toLowerCase().includes(currentTagFragment)
+        );
+  const filteredEditTagSuggestions =
+    currentEditTagFragment.length === 0
+      ? tagSuggestions.filter((tag) => !selectedEditTags.includes(tag)).slice(0, 5)
+      : tagSuggestions.filter(
+          (tag) =>
+            !selectedEditTags.includes(tag) &&
+            tag.toLowerCase().includes(currentEditTagFragment)
         );
 
   function applyTagSuggestion(tag: string) {
@@ -57,6 +74,15 @@ export default function HomePage() {
       .filter((part) => part.length > 0);
     const nextTags = parts.includes(tag) ? parts : [...parts, tag];
     setNewVideoTags(`${nextTags.join(', ')}, `);
+  }
+
+  function applyEditTagSuggestion(tag: string) {
+    const parts = editVideoTags
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+    const nextTags = parts.includes(tag) ? parts : [...parts, tag];
+    setEditVideoTags(`${nextTags.join(', ')}, `);
   }
 
   useEffect(() => {
@@ -129,6 +155,36 @@ export default function HomePage() {
       await deleteDoc(doc(db, 'videos', videoId));
     } catch (err) {
       console.error('Failed to delete video:', err);
+    }
+  }
+
+  function handleEditVideo(video: Video) {
+    setEditingVideo(video);
+    const baseTags = video.tags.join(', ');
+    setEditVideoTags(baseTags.length > 0 ? `${baseTags}, ` : '');
+    setEditError('');
+    setIsEditDialogOpen(true);
+  }
+
+  async function handleUpdateVideoTags(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingVideo) return;
+
+    const tags = editVideoTags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+
+    try {
+      await updateDoc(doc(db, 'videos', editingVideo.id), {
+        tags: tags,
+      });
+      setEditingVideo(null);
+      setEditVideoTags('');
+      setIsEditDialogOpen(false);
+    } catch (err) {
+      setEditError('Failed to update tags.');
+      console.error('Failed to update tags:', err);
     }
   }
 
@@ -280,6 +336,12 @@ export default function HomePage() {
                       >
                         <ExternalLink className="h-5 w-5" />
                       </a>
+                    <button
+                      onClick={() => handleEditVideo(video)}
+                      className="p-2 bg-white rounded-full hover:bg-gray-100"
+                    >
+                      <Edit className="h-5 w-5" />
+                    </button>
                       <button
                         onClick={() => handleDeleteVideo(video.id)}
                         className="p-2 bg-white rounded-full hover:bg-gray-100 text-red-600"
@@ -325,6 +387,48 @@ export default function HomePage() {
               {copied ? 'Copied!' : 'Copy'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Tags</DialogTitle>
+            <DialogDescription>Update tags for this video.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateVideoTags} className="space-y-4">
+            {editError && (
+              <Alert variant="destructive">
+                <AlertDescription>{editError}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="edit-tags">Tags (comma separated)</Label>
+              <Input
+                id="edit-tags"
+                placeholder="music, tutorial, gaming"
+                value={editVideoTags}
+                onChange={(e) => setEditVideoTags(e.target.value)}
+              />
+              {filteredEditTagSuggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {filteredEditTagSuggestions.map((tag) => (
+                    <button
+                      key={`edit-tag-suggestion-${tag}`}
+                      type="button"
+                      onClick={() => applyEditTagSuggestion(tag)}
+                      className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-50"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="submit">Save Tags</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
