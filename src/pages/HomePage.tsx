@@ -241,7 +241,8 @@ export default function HomePage() {
                       </button>
                     </div>
                     {video.tags.length > 0 && (
-                      <div className="flex flex-wrap justify-center gap-1 px-2">
+                      <div className="max-h-24 w-full overflow-y-auto px-2">
+                        <div className="flex flex-wrap justify-center gap-1">
                         {video.tags.map((tag, index) => (
                           <span
                             key={`${video.id}-tag-${index}`}
@@ -250,6 +251,7 @@ export default function HomePage() {
                             {tag}
                           </span>
                         ))}
+                        </div>
                       </div>
                     )}
                   </div>

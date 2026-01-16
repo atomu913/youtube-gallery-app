@@ -144,7 +144,8 @@ export default function SharedGalleryPage() {
                         <ExternalLink className="h-5 w-5" />
                       </div>
                       {video.tags.length > 0 && (
-                        <div className="flex flex-wrap justify-center gap-1 px-2">
+                        <div className="max-h-24 w-full overflow-y-auto px-2">
+                          <div className="flex flex-wrap justify-center gap-1">
                           {video.tags.map((tag, index) => (
                             <span
                               key={`${video.id}-tag-${index}`}
@@ -153,6 +154,7 @@ export default function SharedGalleryPage() {
                               {tag}
                             </span>
                           ))}
+                          </div>
                         </div>
                       )}
                     </div>
