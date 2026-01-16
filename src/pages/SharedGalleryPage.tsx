@@ -3,10 +3,9 @@ import { useParams } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Video, UserProfile } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Search, ExternalLink, Loader2 } from 'lucide-react';
+import { ExternalLink, Loader2, Search } from 'lucide-react';
 
 export default function SharedGalleryPage() {
   const { shareToken } = useParams<{ shareToken: string }>();
@@ -15,6 +14,11 @@ export default function SharedGalleryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const filteredVideos = videos.filter((video) => {
+    const query = searchQuery.toLowerCase();
+    return video.tags.some((tag) => tag.toLowerCase().includes(query));
+  });
+
 
   useEffect(() => {
     async function fetchSharedGallery() {
@@ -69,13 +73,6 @@ export default function SharedGalleryPage() {
     fetchSharedGallery();
   }, [shareToken]);
 
-  const filteredVideos = videos.filter((video) => {
-    const query = searchQuery.toLowerCase();
-    const titleMatch = video.title.toLowerCase().includes(query);
-    const tagMatch = video.tags.some((tag) => tag.toLowerCase().includes(query));
-    return titleMatch || tagMatch;
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -110,7 +107,7 @@ export default function SharedGalleryPage() {
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search by title or tags..."
+              placeholder="Search by tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -127,7 +124,7 @@ export default function SharedGalleryPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredVideos.map((video) => (
               <Card key={video.id} className="overflow-hidden group">
                 <a
@@ -139,7 +136,7 @@ export default function SharedGalleryPage() {
                   <div className="relative aspect-video">
                     <img
                       src={video.thumbnailUrl}
-                      alt={video.title}
+                      alt="YouTube thumbnail"
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -149,18 +146,6 @@ export default function SharedGalleryPage() {
                     </div>
                   </div>
                 </a>
-                <CardContent className="p-4">
-                  <h3 className="font-medium text-gray-900 truncate mb-2">
-                    {video.title}
-                  </h3>
-                  <div className="flex flex-wrap gap-1">
-                    {video.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
               </Card>
             ))}
           </div>

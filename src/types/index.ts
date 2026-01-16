@@ -11,7 +11,6 @@ export interface Video {
   userId: string;
   youtubeUrl: string;
   youtubeVideoId: string;
-  title: string;
   thumbnailUrl: string;
   tags: string[];
   createdAt: Date;

@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Video } from '@/types';
 import { extractYoutubeVideoId, getYoutubeThumbnailUrl } from '@/lib/youtube';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Search, Share2, LogOut, ExternalLink, Trash2, Edit } from 'lucide-react';
+import { Plus, Share2, LogOut, ExternalLink, Trash2, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
@@ -21,10 +20,7 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [newVideoUrl, setNewVideoUrl] = useState('');
-  const [newVideoTitle, setNewVideoTitle] = useState('');
   const [newVideoTags, setNewVideoTags] = useState('');
   const [error, setError] = useState('');
   const [shareUrl, setShareUrl] = useState('');
@@ -57,9 +53,7 @@ export default function HomePage() {
 
   const filteredVideos = videos.filter((video) => {
     const query = searchQuery.toLowerCase();
-    const titleMatch = video.title.toLowerCase().includes(query);
-    const tagMatch = video.tags.some((tag) => tag.toLowerCase().includes(query));
-    return titleMatch || tagMatch;
+    return video.tags.some((tag) => tag.toLowerCase().includes(query));
   });
 
   async function handleAddVideo(e: React.FormEvent) {
@@ -82,14 +76,12 @@ export default function HomePage() {
         userId: currentUser?.uid,
         youtubeUrl: newVideoUrl,
         youtubeVideoId: videoId,
-        title: newVideoTitle || `Video ${videoId}`,
         thumbnailUrl: getYoutubeThumbnailUrl(videoId),
         tags: tags,
         createdAt: new Date(),
       });
 
       setNewVideoUrl('');
-      setNewVideoTitle('');
       setNewVideoTags('');
       setIsAddDialogOpen(false);
     } catch (err) {
@@ -104,37 +96,6 @@ export default function HomePage() {
       await deleteDoc(doc(db, 'videos', videoId));
     } catch (err) {
       console.error('Failed to delete video:', err);
-    }
-  }
-
-  function handleEditVideo(video: Video) {
-    setEditingVideo(video);
-    setNewVideoTitle(video.title);
-    setNewVideoTags(video.tags.join(', '));
-    setIsEditDialogOpen(true);
-  }
-
-  async function handleUpdateVideo(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editingVideo) return;
-
-    const tags = newVideoTags
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-
-    try {
-      await updateDoc(doc(db, 'videos', editingVideo.id), {
-        title: newVideoTitle,
-        tags: tags,
-      });
-
-      setEditingVideo(null);
-      setNewVideoTitle('');
-      setNewVideoTags('');
-      setIsEditDialogOpen(false);
-    } catch (err) {
-      console.error('Failed to update video:', err);
     }
   }
 
@@ -191,7 +152,7 @@ export default function HomePage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search by title or tags..."
+              placeholder="Search by tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -228,16 +189,6 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="Video title"
-                    value={newVideoTitle}
-                    onChange={(e) => setNewVideoTitle(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="tags">Tags (comma separated)</Label>
                   <Input
                     id="tags"
@@ -263,13 +214,13 @@ export default function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredVideos.map((video) => (
               <Card key={video.id} className="overflow-hidden group">
                 <div className="relative aspect-video">
                   <img
                     src={video.thumbnailUrl}
-                    alt={video.title}
+                    alt="YouTube thumbnail"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
@@ -282,12 +233,6 @@ export default function HomePage() {
                       <ExternalLink className="h-5 w-5" />
                     </a>
                     <button
-                      onClick={() => handleEditVideo(video)}
-                      className="p-2 bg-white rounded-full hover:bg-gray-100"
-                    >
-                      <Edit className="h-5 w-5" />
-                    </button>
-                    <button
                       onClick={() => handleDeleteVideo(video.id)}
                       className="p-2 bg-white rounded-full hover:bg-gray-100 text-red-600"
                     >
@@ -295,18 +240,6 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="font-medium text-gray-900 truncate mb-2">
-                    {video.title}
-                  </h3>
-                  <div className="flex flex-wrap gap-1">
-                    {video.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
               </Card>
             ))}
           </div>
@@ -330,40 +263,6 @@ export default function HomePage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Video</DialogTitle>
-            <DialogDescription>
-              Update the title and tags for this video.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleUpdateVideo} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Title</Label>
-              <Input
-                id="edit-title"
-                placeholder="Video title"
-                value={newVideoTitle}
-                onChange={(e) => setNewVideoTitle(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-tags">Tags (comma separated)</Label>
-              <Input
-                id="edit-tags"
-                placeholder="music, tutorial, gaming"
-                value={newVideoTags}
-                onChange={(e) => setNewVideoTags(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit">Save Changes</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
