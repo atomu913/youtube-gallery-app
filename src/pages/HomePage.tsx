@@ -26,6 +26,38 @@ export default function HomePage() {
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
+  const tagCounts = videos
+    .flatMap((video) => video.tags)
+    .reduce<Record<string, number>>((counts, tag) => {
+      counts[tag] = (counts[tag] ?? 0) + 1;
+      return counts;
+    }, {});
+  const tagSuggestions = Object.keys(tagCounts).sort((a, b) => {
+    const countDiff = (tagCounts[b] ?? 0) - (tagCounts[a] ?? 0);
+    return countDiff !== 0 ? countDiff : a.localeCompare(b);
+  });
+  const selectedTags = newVideoTags
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+  const currentTagFragment = newVideoTags.split(',').pop()?.trim().toLowerCase() ?? '';
+  const filteredTagSuggestions =
+    currentTagFragment.length === 0
+      ? tagSuggestions.filter((tag) => !selectedTags.includes(tag)).slice(0, 5)
+      : tagSuggestions.filter(
+          (tag) =>
+            !selectedTags.includes(tag) &&
+            tag.toLowerCase().includes(currentTagFragment)
+        );
+
+  function applyTagSuggestion(tag: string) {
+    const parts = newVideoTags.split(',');
+    const trimmedParts = parts.map((part) => part.trim()).filter((part) => part.length > 0);
+    trimmedParts[trimmedParts.length - 1] = tag;
+    const nextValue = trimmedParts.join(', ') + ', ';
+    setNewVideoTags(nextValue);
+  }
+
   useEffect(() => {
     if (!currentUser) return;
 
@@ -196,6 +228,20 @@ export default function HomePage() {
                     value={newVideoTags}
                     onChange={(e) => setNewVideoTags(e.target.value)}
                   />
+                  {filteredTagSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {filteredTagSuggestions.map((tag) => (
+                        <button
+                          key={`tag-suggestion-${tag}`}
+                          type="button"
+                          onClick={() => applyTagSuggestion(tag)}
+                          className="rounded border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-50"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button type="submit">Add Video</Button>
