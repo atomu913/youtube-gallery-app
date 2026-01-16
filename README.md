@@ -22,7 +22,7 @@ YouTubeの動画をサムネイルで一覧表示・管理できるWebアプリ�
 ### 1. Firebase Project Setup
 
 1. [Firebase Console](https://console.firebase.google.com/)で新規プロジェクトを作成
-2. Authentication → Sign-in method で「メール/パスワード」を有効化
+2. Authentication → Sign-in method で「Google」を有効化
 3. Firestore Database を作成（本番モードまたはテストモード）
 4. プロジェクト設定 → マイアプリ → ウェブアプリを追加
 
