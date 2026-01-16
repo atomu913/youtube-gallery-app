@@ -51,11 +51,12 @@ export default function HomePage() {
         );
 
   function applyTagSuggestion(tag: string) {
-    const parts = newVideoTags.split(',');
-    const trimmedParts = parts.map((part) => part.trim()).filter((part) => part.length > 0);
-    trimmedParts[trimmedParts.length - 1] = tag;
-    const nextValue = trimmedParts.join(', ') + ', ';
-    setNewVideoTags(nextValue);
+    const parts = newVideoTags
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+    const nextTags = parts.includes(tag) ? parts : [...parts, tag];
+    setNewVideoTags(`${nextTags.join(', ')}, `);
   }
 
   useEffect(() => {
