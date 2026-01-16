@@ -147,12 +147,18 @@ export default function SharedGalleryPage() {
                         <div className="max-h-24 w-full overflow-y-auto px-2">
                           <div className="flex flex-wrap justify-center gap-1">
                           {video.tags.map((tag, index) => (
-                            <span
+                            <button
                               key={`${video.id}-tag-${index}`}
-                              className="rounded bg-white/90 px-2 py-0.5 text-xs text-gray-900"
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setSearchQuery(tag);
+                              }}
+                              className="rounded bg-white/90 px-2 py-0.5 text-xs text-gray-900 hover:bg-white"
                             >
                               {tag}
-                            </span>
+                            </button>
                           ))}
                           </div>
                         </div>

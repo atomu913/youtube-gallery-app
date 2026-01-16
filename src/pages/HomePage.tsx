@@ -243,14 +243,16 @@ export default function HomePage() {
                     {video.tags.length > 0 && (
                       <div className="max-h-24 w-full overflow-y-auto px-2">
                         <div className="flex flex-wrap justify-center gap-1">
-                        {video.tags.map((tag, index) => (
-                          <span
-                            key={`${video.id}-tag-${index}`}
-                            className="rounded bg-white/90 px-2 py-0.5 text-xs text-gray-900"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                          {video.tags.map((tag, index) => (
+                            <button
+                              key={`${video.id}-tag-${index}`}
+                              type="button"
+                              onClick={() => setSearchQuery(tag)}
+                              className="rounded bg-white/90 px-2 py-0.5 text-xs text-gray-900 hover:bg-white"
+                            >
+                              {tag}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}
