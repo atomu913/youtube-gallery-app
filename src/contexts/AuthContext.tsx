@@ -3,6 +3,8 @@ import {
   User as FirebaseUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -18,8 +20,11 @@ interface AuthContextType {
   loading: boolean;
   signup: (email: string, password: string, displayName: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
+
+const googleProvider = new GoogleAuthProvider();
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -63,6 +68,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await signInWithEmailAndPassword(auth, email, password);
   }
 
+  async function loginWithGoogle() {
+    const result = await signInWithPopup(auth, googleProvider);
+    const user = result.user;
+
+    const docRef = doc(db, 'users', user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      const shareToken = uuidv4();
+      const profile: UserProfile = {
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || 'User',
+        shareToken: shareToken,
+        createdAt: new Date(),
+      };
+
+      await setDoc(docRef, profile);
+      setUserProfile(profile);
+    }
+  }
+
   async function logout() {
     await signOut(auth);
     setUserProfile(null);
@@ -96,6 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     signup,
     login,
+    loginWithGoogle,
     logout,
   };
 
